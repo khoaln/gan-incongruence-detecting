@@ -167,6 +167,13 @@ def create_dataset(df):
     return result_df, result_df_para
 
 
+def export_df_for_gan(df, gan_data_dir):
+    article_df = []
+    for row in df.itertuples():
+        f = open(os.path.join(gan_data_dir, "{}.txt".format(row.Index)), 'w')
+        f.write("{}\n\n@highlight\n\n{}".format(row.body, row.headline))
+        f.close()
+
 def export_df_to_dataset(df, output_dir):
     df["body"] = df.apply(lambda row: [sent_tokenize(para) for para in row["body"]], axis=1)
 
@@ -238,21 +245,25 @@ def export_df_to_dataset_para(df, output_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', default="export", help="gan|export")
     parser.add_argument('--input_path', help="path to article csv file")
     parser.add_argument('--output_dir', default=".", help="directory to export output file")
     parser.add_argument('--nela_path', default=None, help="directory to raw NELA JSON folder path")
-
+    parser.add_argument('--gan_path', help="directory to export raw data for training GAN")
 
     args = parser.parse_args()
     if args.nela_path is not None:
         df = load_from_raw_data(args.nela_path)
     else:
         df = pd.read_csv(args.input_path, header=None, names=["headline", "body"])
-    
-    df["body"] = df.apply(lambda row: row["body"].replace("\xa0", " "), axis=1)
-    df["paras"] = df.apply(lambda row: list(filter(None, row["body"].split("\n"))), axis=1)
-    print("Shuffling....")
-    df, df_para = create_dataset(df)
-    print("Exporting....")
-    export_df_to_dataset(df, args.output_dir)
-    export_df_to_dataset_para(df_para, args.output_dir)
+
+    if args.mode == "export":
+        df["body"] = df.apply(lambda row: row["body"].replace("\xa0", " "), axis=1)
+        df["paras"] = df.apply(lambda row: list(filter(None, row["body"].split("\n"))), axis=1)
+        print("Shuffling....")
+        df, df_para = create_dataset(df)
+        print("Exporting....")
+        export_df_to_dataset(df, args.output_dir)
+        export_df_to_dataset_para(df_para, args.output_dir)
+    else:
+        export_df_for_gan(df, args.gan_path)
