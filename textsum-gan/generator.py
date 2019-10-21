@@ -56,9 +56,9 @@ class Generator(object):
             self.rouge_reward = tf.placeholder(shape=[hps.batch_size.value, 1], dtype=tf.float32)
 
         # decoder part
-        self._dec_batch = tf.placeholder(tf.int32, [hps.batch_size.value, hps.max_dec_steps.value], name='dec_batch')
-        self._target_batch = tf.placeholder(tf.int32, [hps.batch_size.value, hps.max_dec_steps.value], name='target_batch')
-        self._dec_padding_mask = tf.placeholder(tf.float32, [hps.batch_size.value, hps.max_dec_steps.value],
+        self._dec_batch = tf.placeholder(tf.int32, [hps.batch_size.value, hps.max_dec_steps], name='dec_batch')
+        self._target_batch = tf.placeholder(tf.int32, [hps.batch_size.value, hps.max_dec_steps], name='target_batch')
+        self._dec_padding_mask = tf.placeholder(tf.float32, [hps.batch_size.value, hps.max_dec_steps],
                                                 name='dec_padding_mask')
         if hps.mode.value == "decode" and hps.coverage.value:
             self.prev_coverage = tf.placeholder(tf.float32, [hps.batch_size.value, None], name='prev_coverage')
@@ -313,8 +313,8 @@ class Generator(object):
                     self._RL_loss = self._mask_and_avg(tf.unstack(sample_loss_with_reward, axis=1), self._dec_padding_mask)
 
                     if hps.seqgan.value:
-                        _roll_mask = [0.] * hps.max_dec_steps.value
-                        for i in range(1, hps.max_dec_steps.value, 10):
+                        _roll_mask = [0.] * hps.max_dec_steps
+                        for i in range(1, hps.max_dec_steps, 10):
                             _roll_mask[i] = 1.
                         roll_mask = tf.constant([_roll_mask] * hps.batch_size.value)
                         loss_with_reward = tf.expand_dims(self.D_reward, 2)*tf.stack(sample_loss_per_step, axis=1)*tf.expand_dims(roll_mask, 2)
@@ -416,7 +416,7 @@ class Generator(object):
             def run_once():
                 rollout_token = []
                 # modifying
-                for given_number in tqdm(range(1, hps.max_dec_steps.value, 10)):
+                for given_number in tqdm(range(1, hps.max_dec_steps, 10)):
                     out_state = [self.state_list[given_number]]*(int(hps.rollout.value/2))
 
                     output_token = tensor_array_ops.TensorArray(dtype=tf.int32, size=FLAGS.max_dec_steps,
@@ -426,7 +426,7 @@ class Generator(object):
                         output_token = output_token.write(i, [self.output_token[i]]*(int(hps.rollout.value/2)))
 
                     time_step, output_token, given_number, out_state = control_flow_ops.while_loop(
-                            cond=lambda time_step, _1, _2, _3: time_step < hps.max_dec_steps.value - given_number,
+                            cond=lambda time_step, _1, _2, _3: time_step < hps.max_dec_steps - given_number,
                             body=reward_recurrence,
                             loop_vars=(np.int32(0),
                                        output_token,
