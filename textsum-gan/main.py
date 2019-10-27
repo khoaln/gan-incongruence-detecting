@@ -12,6 +12,10 @@ import tensorflow as tf
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
+# prevent full GPU usage
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+
 # Data dirs
 tf.app.flags.DEFINE_string('data_path', '', 'Path expression to tf.Example datafiles.\
                            Can include wildcards to access multiple datafiles.')
