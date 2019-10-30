@@ -187,7 +187,7 @@ if __name__ == '__main__':
   if not os.path.exists(finished_files_dir): os.makedirs(finished_files_dir)
 
   # Run stanford tokenizer on both files dirs, outputting to tokenized files directories
-  # tokenize_files(nela_dir, nela_tokenized_files_dir)
+  tokenize_files(nela_dir, nela_tokenized_files_dir)
 
   # Read the tokenized files, do a little postprocessing then write to bin files
   write_to_bin(os.path.join(finished_files_dir, "test.bin"), type="test")
