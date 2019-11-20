@@ -172,13 +172,13 @@ class BeamSearchDecoder(object):
         decoded_file = os.path.join(self._rouge_dec_dir, "%06d_decoded.txt" % ex_index)
         article_file = os.path.join(self._rouge_article_dir, "%06d_article.txt" % ex_index)
 
-        with open(ref_file, "w") as f:
+        with open(ref_file, "w", encoding="utf8") as f:
             for idx, sent in enumerate(reference_sents):
                 f.write(sent) if idx == len(reference_sents) - 1 else f.write(sent + "\n")
-        with open(decoded_file, "w") as f:
+        with open(decoded_file, "w", encoding="utf8") as f:
             for idx, sent in enumerate(decoded_sents):
                 f.write(sent) if idx == len(decoded_sents) - 1 else f.write(sent + "\n")
-        with open(article_file, "w") as f:
+        with open(article_file, "w", encoding="utf8") as f:
             f.write(article)
         tf.logging.info("Wrote example %i to file" % ex_index)
 

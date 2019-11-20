@@ -28,7 +28,7 @@ def pretrain_generator(generator, generator_batcher, summary_writer, session):
         train_step = result_train['global_step']
         summary_writer.add_summary(summaries, train_step)
         print("global step: %d train loss: %.3f time: %.3f s" % (global_step, loss, time.time() - t0))
-        if loss < 1e-2:
+        if loss < 0.8: #1e-2:
             break
 
 

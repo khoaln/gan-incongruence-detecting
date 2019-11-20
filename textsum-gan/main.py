@@ -20,6 +20,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 tf.app.flags.DEFINE_string('data_path', '', 'Path expression to tf.Example datafiles.\
                            Can include wildcards to access multiple datafiles.')
 tf.app.flags.DEFINE_string('vocab_path', '', 'Path expression to text vocabulary file.')
+tf.app.flags.DEFINE_string('glove_path', '', 'Path to glove.')
 tf.app.flags.DEFINE_string('log_root', 'log', 'Root directory for all logging.')
 tf.app.flags.DEFINE_string('pretrain_dis_data_path', '', 'Data path for pretraining discriminator')
 
@@ -34,10 +35,10 @@ tf.app.flags.DEFINE_boolean('single_pass', False,
                              indefinitely.')
 
 # Hyperparameters
-tf.app.flags.DEFINE_integer('hidden_dim', 256, 'dimension of RNN hidden states')
+tf.app.flags.DEFINE_integer('hidden_dim', 128, 'dimension of RNN hidden states')
 tf.app.flags.DEFINE_integer('emb_dim', 128, 'dimension of word embeddings')
-tf.app.flags.DEFINE_integer('batch_size', 100, 'minibatch size')
-tf.app.flags.DEFINE_integer('dis_batch_size', 256, 'batch size for pretrain discriminator')
+tf.app.flags.DEFINE_integer('batch_size', 64, 'minibatch size')
+tf.app.flags.DEFINE_integer('dis_batch_size', 64, 'batch size for pretrain discriminator')
 tf.app.flags.DEFINE_integer('max_enc_steps', 400, 'max timesteps of encoder (max source text tokens)')
 tf.app.flags.DEFINE_integer('max_dec_steps', 100, 'max timesteps of decoder (max summary tokens)')
 tf.app.flags.DEFINE_integer('beam_size', 4, 'beam size for beam search decoding.')
@@ -131,7 +132,8 @@ def build_seqgan_graph(hps, vocab):
                                       filter_sizes=dis_filter_sizes,
                                       num_filters=dis_num_filters,
                                       pretrained_path=False,
-                                      l2_reg_lambda=dis_l2_reg_lambda)
+                                      l2_reg_lambda=dis_l2_reg_lambda,
+                                      glove_path=FLAGS.glove_path)
     return generator, discriminator
 
 
