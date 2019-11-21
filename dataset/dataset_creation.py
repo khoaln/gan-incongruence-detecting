@@ -5,6 +5,7 @@ from datetime import datetime
 import random
 import math
 import argparse
+import re
 
 import pandas as pd
 import numpy as np
@@ -63,6 +64,30 @@ def load_from_raw_data(nela_path):
                         df = df.append(article_dict, ignore_index=True)
     
     print(df)
+    return df    
+
+def load_from_gan_generated(generated_data_path):
+    BASE_PATH = generated_data_path
+    column_labels = ['headline', 'body', 'generated_headline']
+    df = pd.DataFrame(columns=column_labels)
+    for article_filename in sorted(os.listdir(os.path.join(BASE_PATH, 'article'))):
+        id = article_filename.split('_')[0]
+        decoded_filename = "{}_decoded.txt".format(id)
+        reference_filename = "{}_reference.txt".format(id)
+        article_dict = {
+            'headline': '',
+            'body': '',
+            'generated_headline': ''
+        }
+        with open(os.path.join(BASE_PATH, 'article', article_filename)) as f:
+            article_dict['body'] = f.read()
+        with open(os.path.join(BASE_PATH, 'decoded', decoded_filename)) as f:
+            article_dict['generated_headline'] = re.sub(' +', ' ', f.read().replace('[UNK]', ''))
+        with open(os.path.join(BASE_PATH, 'reference', reference_filename)) as f:
+            article_dict['headline'] = f.read()
+        
+        df = df.append(article_dict, ignore_index=True)
+    
     return df    
 
 def export_csv_for_prediction(df, source_path, para_flag=False):
@@ -157,10 +182,10 @@ def create_dataset(df):
 
         label_1_type = (label_1_type + 1) % 4
         
-        result_df.append({"headline": label_0_row["headline"], "body": label_0_row["paras"], "fake_type": -1, "label": 0})
-        result_df.append({"headline": label_1_base["headline"], "body": result_article, "fake_type": label_1_type, "label": 1})
-        result_df_para.append({"headline": label_0_row["headline"], "body": label_0_row["paras"], "fake_type": -1, "label": 0, "fake_paras": [], "base": label_0_row["paras"]})
-        result_df_para.append({"headline": label_1_base["headline"], "body": result_article, "fake_type": label_1_type, "label": 1, "fake_paras": fake_paras, "base": base_paras})
+        result_df.append({"headline": label_0_row["headline"], "body": label_0_row["paras"], "generated_headline": label_0_row["generated_headline"], "fake_type": -1, "label": 0})
+        result_df.append({"headline": label_1_base["headline"], "body": result_article, "generated_headline": label_1_attach["generated_headline"], "fake_type": label_1_type, "label": 1})
+        result_df_para.append({"headline": label_0_row["headline"], "body": label_0_row["paras"], "generated_headline": label_0_row["generated_headline"], "fake_type": -1, "label": 0, "fake_paras": [], "base": label_0_row["paras"]})
+        result_df_para.append({"headline": label_1_base["headline"], "body": result_article, "generated_headline": label_1_attach["generated_headline"], "fake_type": label_1_type, "label": 1, "fake_paras": fake_paras, "base": base_paras})
 
     result_df = pd.DataFrame(result_df)
     result_df_para = pd.DataFrame(result_df_para)
@@ -186,17 +211,18 @@ def export_df_to_dataset(df, output_dir):
     df["body"] = df.apply(lambda row: [tokenize_sent_in_para(para) for para in row["body"]], axis=1)
 
     df["headline"] = df.apply(lambda row: " ".join(word_tokenize(row["headline"])), axis=1)
+    df["generated_headline"] = df.apply(lambda row: " ".join(word_tokenize(row["generated_headline"])), axis=1)
     df["body_merged"] = df.apply(lambda row: " <EOP> ".join(row["body"]).replace("<EOS>  <EOP>", "<EOS> <EOP>"), axis=1)
 
     df_train = df.iloc[:int(df.shape[0] * P_TRAIN)]
     df_dev = df.iloc[int(df.shape[0] * P_TRAIN):int(df.shape[0] * (P_TRAIN + P_DEV))]
     df_test = df.iloc[int(df.shape[0] * (P_TRAIN + P_DEV)):]
     
-    whole_train_df = df_train[["headline", "body_merged", "label"]]
+    whole_train_df = df_train[["headline", "body_merged", "generated_headline", "label"]]
     whole_train_df.to_csv(os.path.join(output_dir, "train.csv"), encoding="utf-8", header=False)
-    whole_dev_df = df_dev[["headline", "body_merged", "label"]]
+    whole_dev_df = df_dev[["headline", "body_merged", "generated_headline", "label"]]
     whole_dev_df.to_csv(os.path.join(output_dir,"dev.csv"), encoding="utf-8", header=False)
-    whole_test_df = df_test[["headline", "body_merged", "label"]]
+    whole_test_df = df_test[["headline", "body_merged", "generated_headline", "label"]]
     whole_test_df.to_csv(os.path.join(output_dir,"test.csv"), encoding="utf-8", header=False)
 
 
@@ -250,11 +276,14 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', default=".", help="directory to export output file")
     parser.add_argument('--nela_path', default=None, help="directory to raw NELA JSON folder path")
     parser.add_argument('--gan_path', help="directory to export raw data for training GAN")
+    parser.add_argument('--generated_data_path', help="data generated from GAN")
 
     args = parser.parse_args()
     if args.nela_path is not None:
         df = load_from_raw_data(args.nela_path)
-    else:
+    elif args.generated_data_path is not None:
+        df = load_from_gan_generated(args.generated_data_path)
+    else:    
         df = pd.read_csv(args.input_path, header=None, names=["headline", "body"])
 
     if args.mode == "export":
