@@ -39,8 +39,8 @@ def loadData(file):
   return data, classes
 
 # load data
-train_data, train_classes = loadData('dataset/output/train.csv')
-test_data, test_classes = loadData('dataset/output/test.csv')
+train_data, train_classes = loadData('dataset/output_bert_similarity/train.csv')
+test_data, test_classes = loadData('dataset/output_bert_similarity/test.csv')
 
 model = tf.keras.Sequential()
 model.add(layers.Dense(100, activation='relu', input_shape=(2049,)))

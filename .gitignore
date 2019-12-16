@@ -1,0 +1,15 @@
+dataset/bert_april.model
+dataset/bert_body.model
+dataset/d2v.model.docvecs.vectors_docs.npy
+dataset/d2v_april.model
+dataset/output_bert_similarity/dev.csv
+dataset/output_bert_similarity/test.csv
+dataset/output_bert_similarity/train.csv
+dataset/output_d2v_similarity/dev.csv
+dataset/output_d2v_similarity/test.csv
+dataset/output_d2v_similarity/train.csv
+dataset/output_full/dev.csv
+dataset/output_full/dev_IP.csv
+dataset/output_full/test.csv
+dataset/output_full/train.csv
+dataset/output_full/train_IP.csv
