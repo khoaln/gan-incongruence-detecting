@@ -4,6 +4,8 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from gensim.models.doc2vec import Doc2Vec
+from sklearn.metrics import roc_curve, roc_auc_score
+import matplotlib.pyplot as plt
 
 # load BERT model
 bert = pickle.load(open("dataset/bert.model", 'rb'))
@@ -42,15 +44,39 @@ def loadData(file):
 train_data, train_classes = loadData('dataset/output_bert_similarity/train.csv')
 test_data, test_classes = loadData('dataset/output_bert_similarity/test.csv')
 
+train_data = np.array(train_data)
+train_classes = np.array(train_classes)
+test_data = np.array(test_data)
+test_classes = np.array(test_classes)
+
 model = tf.keras.Sequential()
 model.add(layers.Dense(100, activation='relu', input_shape=(2049,)))
 model.add(layers.Dense(100))
 model.add(layers.Dense(2, activation='softmax'))
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(np.array(train_data), np.array(train_classes), epochs=90, batch_size=500)
+model.fit(train_data, train_classes, epochs=90, batch_size=500)
 
-loss, accuracy = model.evaluate(np.array(test_data), np.array(test_classes))
+loss, accuracy = model.evaluate(test_data, test_classes)
 # loss, accuracy = model.evaluate(np.array(train_data), np.array(train_classes))
+
+predict = model.predict_proba(test_data)
+predict_result = []
+for p in predict:
+  predict_result.append(0 if p[0] > p[1] else 1)
+
+fpr, tpr, thresholds = roc_curve(test_classes, predict_result)
+
+def plot_roc_curve(fpr,tpr): 
+  plt.plot(fpr,tpr) 
+  plt.axis([0,1,0,1]) 
+  plt.xlabel('False Positive Rate') 
+  plt.ylabel('True Positive Rate') 
+  plt.show()    
+  
+plot_roc_curve (fpr,tpr)
+# print(predict[0])
+auc_score = roc_auc_score(test_classes, predict_result)
 
 print('Testing loss: %0.2f' %loss)
 print('Testing accuracy: %0.2f%%' % (accuracy*100))
+print('AUC: %0.2f%%' % (auc_score*100))
